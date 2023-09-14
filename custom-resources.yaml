@@ -12,12 +12,11 @@ spec:
     nodeAddressAutodetectionV4:
       kubernetes: NodeInternalIP
     ipPools:
-    
-blockSize: 24
-    cidr: 10.140.0.0/16
-    encapsulation: VXLAN
-    natOutgoing: Enabled
-    nodeSelector: all()
+    - blockSize: 24
+      cidr: 10.140.0.0/16
+      encapsulation: VXLAN
+      natOutgoing: Enabled
+      nodeSelector: all()
 ---
 
 # This section configures the Calico API server.
