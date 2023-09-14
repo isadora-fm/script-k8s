@@ -40,6 +40,8 @@ function RepoK8s {
     sudo apt-get update
 }
 
+
+
 function PreInstallK8s {
     sudo sed -e '/swap/ s/^#*/#/' -i /etc/fstab
     sudo swapoff -a 
@@ -69,18 +71,21 @@ function configsKubeAdm {
 }
 
 function firewall {
-    sudo iptables -t nat -F
-    sudo iptables -t nat -X
+    sudo iptables -F && iptables -X
+    sudo iptables -t nat -F && iptables -t nat -X;
+    sudo iptables -t raw -F && iptables -t raw -X;
+    sudo iptables -t mangle -F && iptables -t mangle -X;
 }
 function InstallKubernetes { 
     sudo kubeadm config images pull --kubernetes-version v${K8S_VERSION}  
-    sudo kubeadm init --pod-network-cidr 192.168.0.0/16 --kubernetes-version v${K8S_VERSION} --apiserver-advertise-address=${IP_HOST}  
+    sudo kubeadm init --pod-network-cidr 10.140.0.0/16 --service-cidr=10.150.0.0/16 --kubernetes-version v${K8S_VERSION} --apiserver-advertise-address=${IP_HOST}  
     mkdir -p $HOME/.kube
     sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     sudo chown $(id -u):$(id -g) $HOME/.kube/config
 }
 
 function ConfigKubeAdm {
+    sudo chown $USER. /var/lib/kubelet/ -R
     cat <<EOF > /var/lib/kubelet/kubeadm-flags.env
     KUBELET_KUBEADM_ARGS="--network-plugin=cni --pod-infra-container-image=k8s.gcr.io/pause:3.4.1 --allowed-unsafe-sysctls='net.*' --feature-gates=CPUManager=true --topology-manager-policy=best-effort --feature-gates=KubeletPodResources=true --feature-gates=KubeletPodResourcesGetAllocatable=true"
 EOF
@@ -95,17 +100,9 @@ function InstallCalico {
     helm repo add projectcalico https://docs.projectcalico.org/charts
     helm repo add incubator https://charts.helm.sh/incubator
     helm repo update
-    sleep 20
     kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/tigera-operator.yaml
     kubectl create -f custom-resources.yaml     
 }
-function multus {
-    cd $HOME
-    wget https://github.com/k8snetworkplumbingwg/multus-cni/archive/refs/tags/v3.7.1.zip && unzip v3.7.1.zip
-    kubectl apply -f $HOME/multus-cni-3.7.1/images/multus-daemonset.yml
-    sudo rm v3.7.1.zip
-}
-
 
 function CheckInstallK8s {    
     sleep 50 && kubectl get nodes && kubectl get pods -A
@@ -114,9 +111,9 @@ function CheckInstallK8s {
 #--------------------------------[ Start of Script Execution ]------------------------------------
 echo -e "${YELLOW}$(date +%d/%m%Y) - $(date +%T) - Start cluster installation${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-PreInstallPackages
+# PreInstallPackages
 
-InstallHelm
+# InstallHelm
 
 RepoK8s
 
@@ -135,8 +132,6 @@ ConfigKubeAdm
 RemoveTaintKubernetes
 
 InstallCalico
-
-multus
 
 CheckInstallK8s
 
