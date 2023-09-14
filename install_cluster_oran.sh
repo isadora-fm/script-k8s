@@ -111,9 +111,9 @@ function CheckInstallK8s {
 #--------------------------------[ Start of Script Execution ]------------------------------------
 echo -e "${YELLOW}$(date +%d/%m%Y) - $(date +%T) - Start cluster installation${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-# PreInstallPackages
+PreInstallPackages
 
-# InstallHelm
+InstallHelm
 
 RepoK8s
 
