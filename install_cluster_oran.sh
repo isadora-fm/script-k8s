@@ -104,8 +104,11 @@ function InstallCalico {
     kubectl create -f custom-resources.yaml     
 }
 
-function CheckInstallK8s {    
-    sleep 50 && kubectl get nodes && kubectl get pods -A
+function multus {
+    cd $HOME
+    wget https://github.com/k8snetworkplumbingwg/multus-cni/archive/refs/tags/v3.7.1.zip && unzip v3.7.1.zip
+    kubectl apply -f $HOME/multus-cni-3.7.1/images/multus-daemonset.yml
+    sudo rm v3.7.1.zip
 }
 
 #--------------------------------[ Start of Script Execution ]------------------------------------
@@ -133,7 +136,7 @@ RemoveTaintKubernetes
 
 InstallCalico
 
-CheckInstallK8s
+multus
 
 echo "---------------------------------------------------------" | tee --append "${LOG}"
 newgrp docker
