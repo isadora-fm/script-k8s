@@ -1,12 +1,10 @@
 #!/bin/bash
-# Author: Cleriston Willian (cleriston@cpqd.com.br)
-# Description: Installing prerequisites for cluster VOLTHA Version 2.10.4
-# Cluster K8s version 1.23.9 with Conteinerd
-# Last update: 02/06/2023
+# Author: Isadora Figueiredo (isadorafm@cpqd.com.br)
+# Description: Installing k8s cluster
 #-------------------------------[ Global Variables ]------------------------------------
 
 # Log file location
-LOG="/tmp/prereq-voltha.log"
+LOG="/tmp/k8s_install.log"
 
 # Variables for log colors
 YELLOW="\033[0;33m"
@@ -15,12 +13,12 @@ NC="\033[0m"
 
 set -x
 
-IP_HOST=""
+IPADDRESS=""
 K8S_VERSION="1.21.0"
+CIDR_POD_NETWORK="10.140.0.0/16"
+CIDR_SERVICE="10.150.0.0/16"
 #-------------------------------[ Functions ]-------------------------------------------
-
-
-function PreInstallPackages {
+function InstallPackages {
     sudo apt update
     sudo apt install -y linux-generic-hwe-18.04 curl apt-transport-https ca-certificates net-tools vim ifupdown unzip iotop git make gnupg-agent gcc
 
@@ -39,8 +37,6 @@ function RepoK8s {
     sudo mv ~/kubernetes.list /etc/apt/sources.list.d
     sudo apt-get update
 }
-
-
 
 function PreInstallK8s {
     sudo sed -e '/swap/ s/^#*/#/' -i /etc/fstab
@@ -78,13 +74,13 @@ function firewall {
 }
 function InstallKubernetes { 
     sudo kubeadm config images pull --kubernetes-version v${K8S_VERSION}  
-    sudo kubeadm init --pod-network-cidr 10.140.0.0/16 --service-cidr=10.150.0.0/16 --kubernetes-version v${K8S_VERSION} --apiserver-advertise-address=${IP_HOST}  
+    sudo kubeadm init --pod-network-cidr ${CIDR_POD_NETWORK} --service-cidr=${CIDR_SERVICE} --kubernetes-version v${K8S_VERSION} --apiserver-advertise-address=${IPADDRESS}  
     mkdir -p $HOME/.kube
     sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     sudo chown $(id -u):$(id -g) $HOME/.kube/config
 }
 
-function ConfigKubeAdm {
+function ConfigKubelet {
     sudo chown $USER. /var/lib/kubelet/ -R
     cat <<EOF > /var/lib/kubelet/kubeadm-flags.env
     KUBELET_KUBEADM_ARGS="--network-plugin=cni --pod-infra-container-image=k8s.gcr.io/pause:3.4.1 --allowed-unsafe-sysctls='net.*' --feature-gates=CPUManager=true --topology-manager-policy=best-effort --feature-gates=KubeletPodResources=true --feature-gates=KubeletPodResourcesGetAllocatable=true"
@@ -114,29 +110,56 @@ function multus {
 #--------------------------------[ Start of Script Execution ]------------------------------------
 echo -e "${YELLOW}$(date +%d/%m%Y) - $(date +%T) - Start cluster installation${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-PreInstallPackages
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Packages...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
+InstallPackages
+
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Helm...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 InstallHelm
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Adding k8s repositories...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 RepoK8s
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Docker, kubelet, kuectl, kubeadm and configuring swap...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 PreInstallK8s
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Configuring k8s...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 ConfigsK8s
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Configuring Kubeadm...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 configsKubeAdm
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Configuring Iptables...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 firewall
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing k8s...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 InstallKubernetes
 
-ConfigKubeAdm
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Configuring Kubelet...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
+ConfigKubelet
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Removing Taint...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 RemoveTaintKubernetes
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Calico Custom..${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 InstallCalico
 
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Multus ..${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
 multus
 
+echo -e "${YELLOW}$(date +%d/%m%Y) - $(date +%T) - End of installation of Cluster K8S version ${K8S_VERSION}.${NC}" | tee --append "${LOG}"
+echo -e "Run 'kubectl get pods -A' to see if all pods is ready and running.${NC}" | tee --append "${LOG}"
 echo "---------------------------------------------------------" | tee --append "${LOG}"
 newgrp docker
