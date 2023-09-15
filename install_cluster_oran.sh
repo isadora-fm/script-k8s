@@ -13,6 +13,7 @@ NC="\033[0m"
 
 set -x
 
+DOCKER_VERSION="5:24.0.6-1~ubuntu.20.04~focal"
 IPADDRESS=""
 K8S_VERSION="1.21.0"
 CIDR_POD_NETWORK="10.140.0.0/16"
@@ -38,10 +39,17 @@ function RepoK8s {
     sudo apt-get update
 }
 
+function InstallDocker {
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt update
+    sudo apt install docker-ce=${DOCKER_VERSION}
+}
+
 function PreInstallK8s {
     sudo sed -e '/swap/ s/^#*/#/' -i /etc/fstab
     sudo swapoff -a 
-    sudo apt-get install -y kubelet=${K8S_VERSION}-00 kubeadm=${K8S_VERSION}-00 kubectl=${K8S_VERSION}-00 docker.io
+    sudo apt-get install -y kubelet=${K8S_VERSION}-00 kubeadm=${K8S_VERSION}-00 kubectl=${K8S_VERSION}-00
     sudo apt-mark hold kubelet=${K8S_VERSION}-00 kubeadm=${K8S_VERSION}-00 kubectl=${K8S_VERSION}-00
     sudo systemctl enable --now kubelet
     sudo modprobe overlay
@@ -123,7 +131,11 @@ echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Adding k8s repositories...${NC
 echo | tee --append "${LOG}"
 RepoK8s 1> >(tee --append "${LOG}")
 
-echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Docker, kubelet, kuectl, kubeadm and configuring swap...${NC}" | tee --append "${LOG}"
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Docker...${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
+InstallDocker 1> >(tee --append "${LOG}")
+
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing kubelet, kuectl, kubeadm and configuring swap...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
 PreInstallK8s 1> >(tee --append "${LOG}")
 
