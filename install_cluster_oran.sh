@@ -113,53 +113,53 @@ echo | tee --append "${LOG}"
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Packages...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-InstallPackages
+InstallPackages 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Helm...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-InstallHelm
+InstallHelm 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Adding k8s repositories...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-RepoK8s
+RepoK8s 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Docker, kubelet, kuectl, kubeadm and configuring swap...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-PreInstallK8s
+PreInstallK8s 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Configuring k8s...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-ConfigsK8s
+ConfigsK8s 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Configuring Kubeadm...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-configsKubeAdm
+configsKubeAdm 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Configuring Iptables...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-firewall
+firewall 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing k8s...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-InstallKubernetes
+InstallKubernetes 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Configuring Kubelet...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-ConfigKubelet
+ConfigKubelet 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Removing Taint...${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-RemoveTaintKubernetes
+RemoveTaintKubernetes 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Calico Custom..${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-InstallCalico
+InstallCalico 1> >(tee --append "${LOG}")
 
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Multus ..${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
-multus
+multus 1> >(tee --append "${LOG}")
 
 echo -e "${YELLOW}$(date +%d/%m%Y) - $(date +%T) - End of installation of Cluster K8S version ${K8S_VERSION}.${NC}" | tee --append "${LOG}"
-echo -e "Run 'kubectl get pods -A' to see if all pods is ready and running.${NC}" | tee --append "${LOG}"
+echo -e "${YELLOW} Run 'kubectl get pods -A' to see if all pods is ready and running.${NC}" | tee --append "${LOG}"
 echo "---------------------------------------------------------" | tee --append "${LOG}"
 newgrp docker
