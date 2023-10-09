@@ -115,6 +115,9 @@ function multus {
     sudo rm v3.7.1.zip
 }
 
+function rangeNodePort {
+    sudo sed -i '44i\    - --service-node-port-range=2000-36767' /etc/kubernetes/manifests/kube-apiserver.yaml
+}
 #--------------------------------[ Start of Script Execution ]------------------------------------
 echo -e "${YELLOW}$(date +%d/%m%Y) - $(date +%T) - Start cluster installation${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
@@ -170,6 +173,10 @@ InstallCalico 1> >(tee --append "${LOG}")
 echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Installing Multus ..${NC}" | tee --append "${LOG}"
 echo | tee --append "${LOG}"
 multus 1> >(tee --append "${LOG}")
+
+echo -e "${GREEN}$(date +%d/%m%Y) - $(date +%T) - Update range port ..${NC}" | tee --append "${LOG}"
+echo | tee --append "${LOG}"
+rangeNodePort 1> >(tee --append "${LOG}")
 
 echo -e "${YELLOW}$(date +%d/%m%Y) - $(date +%T) - End of installation of Cluster K8S version ${K8S_VERSION}.${NC}" | tee --append "${LOG}"
 echo -e "${YELLOW} Run 'kubectl get pods -A' to see if all pods is ready and running.${NC}" | tee --append "${LOG}"
